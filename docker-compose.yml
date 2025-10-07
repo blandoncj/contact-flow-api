@@ -1,0 +1,51 @@
+services:
+  db:
+    build:
+      context: ./db 
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    container_name: contact_flow_db
+    restart: always
+    ports:
+      - 3306:3306
+    volumes:
+      - ./db/volumes:/var/lib/mysql
+    hostname: contact_flow
+    networks:
+      - contact_flow_net
+    healthcheck:
+      test: ["CMD", "mysql", "-u", "root", "-proot"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  
+  adminer:
+    image: adminer
+    container_name: adminer
+    restart: always
+    ports:
+      - 8080:8080
+    networks:
+      - contact_flow_net
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    container_name: contact_flow_api
+    restart: always
+    ports:
+      - 8000:8000
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - contact_flow_net
+
+networks:
+  contact_flow_net:
+    driver: bridge
+    name: contact_flow_net
